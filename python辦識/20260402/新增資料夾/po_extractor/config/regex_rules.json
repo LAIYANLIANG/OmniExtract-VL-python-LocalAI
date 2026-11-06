@@ -1,0 +1,63 @@
+{
+  "_version": "1.0.0",
+  "_description": "Regex 清洗規則庫（版本化控制）",
+  "rules": [
+    {
+      "id": "clean_bracket_numbers",
+      "pattern": "\\[\\d+\\]",
+      "replacement": "",
+      "description": "移除 [xx] 格式引用編號",
+      "version": 1,
+      "created": "2026-03-31",
+      "status": "active",
+      "success_count": 0,
+      "failure_count": 0
+    },
+    {
+      "id": "clean_whitespace",
+      "pattern": "\\s+",
+      "replacement": "",
+      "description": "移除所有空白字元（用於比對）",
+      "version": 1,
+      "created": "2026-03-31",
+      "status": "active",
+      "success_count": 0,
+      "failure_count": 0
+    },
+    {
+      "id": "normalize_currency_symbols",
+      "pattern": "[＄￥￡€]",
+      "replacement": "",
+      "description": "移除全形貨幣符號",
+      "version": 1,
+      "created": "2026-03-31",
+      "status": "active",
+      "success_count": 0,
+      "failure_count": 0
+    },
+    {
+      "id": "clean_ocr_artifacts",
+      "pattern": "[｜│▌]",
+      "replacement": "",
+      "description": "移除 OCR 產生的表格線條字元",
+      "version": 1,
+      "created": "2026-03-31",
+      "status": "active",
+      "success_count": 0,
+      "failure_count": 0
+    },
+    {
+      "id": "normalize_quotes",
+      "pattern": "[""''「」『』]",
+      "replacement": "\"",
+      "description": "統一引號格式",
+      "version": 1,
+      "created": "2026-03-31",
+      "status": "active",
+      "success_count": 0,
+      "failure_count": 0
+    }
+  ],
+  "_failure_log": [],
+  "_last_cleanup": "2026-03-31T00:00:00Z"
+}

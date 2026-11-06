@@ -1,0 +1,102 @@
+{
+  "siemens": {
+    "bill_to.contact": [
+      {
+        "pattern": "egrated\\ Silicon\\ Solution公司\\s*[:：]?\\s*([^\\n]{1,100})",
+        "group": 1,
+        "flags": "IGNORECASE",
+        "label": "egrated Silicon Solution公司",
+        "samples": 2,
+        "last_updated": "2026-03-30",
+        "source_files": [
+          "4511697495.json"
+        ]
+      }
+    ]
+  },
+  "_keywords": {
+    "siemens": [
+      "Siemens Industrial Automation Products Ltd., Chengdu",
+      "西门子(中国)有限公司 GBS P2P CN财务部 - 发票中心"
+    ],
+    "BYD": [
+      "3100544305"
+    ],
+    "Kaifa": [
+      "Kaifa Technology",
+      "4501027279"
+    ],
+    "kaifa": [
+      "KAIFA TECHNOLOGY (H.K) LTD.",
+      "KAIFA TECHNOLOGY (H.K.) LTD.",
+      "Integrated Silicon Solution (Cayman), Inc."
+    ],
+    "desay_sv": [
+      "惠州市德赛西威汽车电子股份有限公司",
+      "INTEGRATEDSILICONSOLUTION(CAYMAN),INC"
+    ]
+  },
+  "BYD": {
+    "po.number": [
+      {
+        "pattern": "Order\\ No\\s*[:：]?\\s*([^\\n]{1,100})",
+        "group": 1,
+        "flags": "IGNORECASE",
+        "label": "Order No",
+        "samples": 1,
+        "last_updated": "2026-03-30",
+        "source_files": [
+          "3100544305Integrated_silicon_solutionCaymon.pdf"
+        ],
+        "pretrained": true
+      }
+    ]
+  },
+  "Kaifa": {
+    "company.name": [
+      {
+        "pattern": "cn\\\nPurchase\\ Order\\\nBill\\ To\\s*[:：]?\\s*([^\\n]{1,100})",
+        "group": 1,
+        "flags": "IGNORECASE",
+        "label": "cn\nPurchase Order\nBill To",
+        "samples": 1,
+        "last_updated": "2026-03-30",
+        "source_files": [
+          "PO_4501027279_REV01.pdf"
+        ],
+        "pretrained": true
+      }
+    ],
+    "po.number": [
+      {
+        "pattern": "G\\ KONG\\\nHONG\\ KONG\\ PO\\ Number\\s*[:：]?\\s*([^\\n]{1,100})",
+        "group": 1,
+        "flags": "IGNORECASE",
+        "label": "G KONG\nHONG KONG PO Number",
+        "samples": 1,
+        "last_updated": "2026-03-30",
+        "source_files": [
+          "PO_4501027279_REV01.pdf"
+        ],
+        "pretrained": true
+      }
+    ]
+  },
+  "kaifa": {
+    "purchase_info.contact": [
+      {
+        "pattern": "Phone\\ ÁõÐÀÒË\\s*[:：]?\\s*([^\\n]{1,100})",
+        "group": 1,
+        "flags": "IGNORECASE",
+        "label": "Phone ÁõÐÀÒË",
+        "samples": 1,
+        "last_updated": "2026-03-31",
+        "source_files": [
+          "PO_4501027279_REV01.json"
+        ]
+      }
+    ]
+  },
+  "desay_sv": {},
+  "generic": {}
+}

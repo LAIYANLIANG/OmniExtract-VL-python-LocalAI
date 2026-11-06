@@ -1,0 +1,15 @@
+[
+  {
+    "field_path": "vendor_name",
+    "vendor_types": [
+      "TEST_VENDOR"
+    ],
+    "problem_pattern": "原始值 'Test Corp' 被修正為 'Corrected Test Corp'",
+    "text_indicators": [],
+    "correction_rule": "當找到 [] 時，優先選擇 'Corrected Test Corp' 類型的值",
+    "confidence_boost": 20.0,
+    "success_count": 0,
+    "created_date": "2026-04-01T01:33:47.448157",
+    "last_used_date": ""
+  }
+]

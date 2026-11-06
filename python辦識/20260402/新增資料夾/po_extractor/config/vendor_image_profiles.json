@@ -1,0 +1,45 @@
+{
+  "_version": "1.0.0",
+  "_description": "供應商影像特徵歷史記錄與 Qwen 回饋建議",
+  "siemens": {
+    "last_updated": "2026-03-31",
+    "known_issues": [
+      "統編字體較淡，位於浮水印上方",
+      "表格線條偏細，影響分割"
+    ],
+    "qwen_suggestions": [],
+    "avg_confidence_after_ocr": 0.85,
+    "total_processed": 5,
+    "success_rate": 0.80
+  },
+  "byd": {
+    "last_updated": "2026-03-31",
+    "known_issues": [
+      "中英文混排，影響 OCR 準確度"
+    ],
+    "qwen_suggestions": [],
+    "avg_confidence_after_ocr": 0.89,
+    "total_processed": 3,
+    "success_rate": 0.85
+  },
+  "kaifa": {
+    "last_updated": "2026-03-31",
+    "known_issues": [
+      "價格格式包含 per /10,000 需特殊處理"
+    ],
+    "qwen_suggestions": [],
+    "avg_confidence_after_ocr": 0.87,
+    "total_processed": 3,
+    "success_rate": 0.78
+  },
+  "desay_sv": {
+    "last_updated": "2026-03-31",
+    "known_issues": [
+      "中文字體識別率偏低"
+    ],
+    "qwen_suggestions": [],
+    "avg_confidence_after_ocr": 0.92,
+    "total_processed": 4,
+    "success_rate": 0.95
+  }
+}

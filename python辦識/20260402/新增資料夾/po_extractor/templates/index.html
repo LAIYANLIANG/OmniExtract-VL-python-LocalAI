@@ -1,0 +1,2144 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PO PDF 特徵提取工具</title>
+<style>
+  :root {
+    --primary: #2563eb;
+    --primary-hover: #1d4ed8;
+    --success: #16a34a;
+    --error: #dc2626;
+    --bg: #f8fafc;
+    --card: #ffffff;
+    --border: #e2e8f0;
+    --text: #1e293b;
+    --text2: #64748b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft JhengHei", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+  }
+  .container { max-width: 960px; margin: 0 auto; padding: 20px; }
+
+  /* Header */
+  header {
+    background: linear-gradient(135deg, var(--primary), #7c3aed);
+    color: white;
+    padding: 32px 0;
+    margin-bottom: 24px;
+    border-radius: 0 0 16px 16px;
+  }
+  header h1 { text-align: center; font-size: 1.8rem; font-weight: 700; }
+  header p { text-align: center; opacity: 0.85; margin-top: 6px; font-size: 0.95rem; }
+
+  /* Cards */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+  .card h2 {
+    font-size: 1.15rem;
+    margin-bottom: 16px;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card h2 .icon { font-size: 1.3rem; }
+
+  /* Drop Zone */
+  .drop-zone {
+    border: 2px dashed var(--border);
+    border-radius: 12px;
+    padding: 48px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: #f1f5f9;
+  }
+  .drop-zone:hover, .drop-zone.dragover {
+    border-color: var(--primary);
+    background: #eff6ff;
+  }
+  .drop-zone .icon-upload { font-size: 3rem; color: var(--primary); }
+  .drop-zone p { margin-top: 10px; color: var(--text2); }
+  .drop-zone .hint { font-size: 0.85rem; color: #94a3b8; margin-top: 4px; }
+
+  /* File list */
+  .file-list {
+    margin-top: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .file-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+  }
+  .file-item .name { flex: 1; font-size: 0.9rem; word-break: break-all; }
+  .file-item .size { font-size: 0.8rem; color: var(--text2); white-space: nowrap; }
+  .file-item .remove {
+    background: none; border: none; color: var(--error);
+    cursor: pointer; font-size: 1.2rem; padding: 0 4px;
+  }
+
+  /* Buttons */
+  .btn-row { display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap; }
+  .btn {
+    padding: 10px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-primary { background: var(--primary); color: white; }
+  .btn-primary:hover:not(:disabled) { background: var(--primary-hover); }
+  .btn-secondary { background: #e2e8f0; color: var(--text); }
+  .btn-secondary:hover:not(:disabled) { background: #cbd5e1; }
+  .btn-success { background: var(--success); color: white; }
+  .btn-success:hover:not(:disabled) { background: #15803d; }
+
+  /* Progress */
+  .progress-bar {
+    width: 100%;
+    height: 6px;
+    background: #e2e8f0;
+    border-radius: 3px;
+    margin-top: 16px;
+    overflow: hidden;
+    display: none;
+  }
+  .progress-bar .fill {
+    height: 100%;
+    background: var(--primary);
+    border-radius: 3px;
+    transition: width 0.3s;
+    width: 0%;
+  }
+  .progress-bar.active { display: block; }
+  .progress-bar.indeterminate .fill {
+    width: 30%;
+    animation: indeterminate 1.5s infinite;
+  }
+  @keyframes indeterminate {
+    0% { margin-left: -30%; }
+    100% { margin-left: 100%; }
+  }
+
+  /* Results Table */
+  .results-section { display: none; }
+  .results-section.show { display: block; }
+  .results-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+  }
+  .results-table th {
+    background: #f1f5f9;
+    text-align: left;
+    padding: 10px 12px;
+    font-weight: 600;
+    border-bottom: 2px solid var(--border);
+  }
+  .results-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  .results-table tr:hover td { background: #f8fafc; }
+  .badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+  .badge-success { background: #dcfce7; color: #15803d; }
+  .badge-error { background: #fee2e2; color: #dc2626; }
+  .badge-vendor { background: #eff6ff; color: #2563eb; }
+  .badge-warning { background: #fef3c7; color: #b45309; }
+  .badge-review { background: #fee2e2; color: #dc2626; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:.7;} }
+
+  /* Qwen Execution Indicators */
+  .qwen-executed { 
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    padding: 3px 8px; 
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
+    cursor: help;
+  }
+  .qwen-attempted { 
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: white;
+    padding: 3px 8px; 
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    cursor: help;
+  }
+  .high-confidence { 
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    color: white;
+    padding: 3px 8px; 
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    cursor: help;
+  }
+  .qwen-unavailable { 
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: white;
+    padding: 3px 8px; 
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    cursor: help;
+  }
+  .legacy-data-badge { 
+    background: linear-gradient(135deg, #6b7280, #4b5563);
+    color: white;
+    padding: 3px 8px; 
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    cursor: help;
+    opacity: 0.8;
+  }
+
+  /* Accuracy bar */
+  .accuracy-bar {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+  .accuracy-bar .bar {
+    width: 60px; height: 8px;
+    background: #e2e8f0;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .accuracy-bar .bar .fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.3s;
+  }
+  .accuracy-high .fill { background: #16a34a; }
+  .accuracy-med .fill { background: #f59e0b; }
+  .accuracy-low .fill { background: #dc2626; }
+
+  .action-link {
+    color: var(--primary);
+    text-decoration: none;
+    font-size: 0.85rem;
+    margin-right: 8px;
+  }
+  .action-link:hover { text-decoration: underline; }
+
+  /* Version indicators */
+  .version-badge {
+    font-size: 0.7rem;
+    padding: 1px 6px;
+    border-radius: 8px;
+    font-weight: 600;
+    margin-left: 6px;
+  }
+  .version-badge.corrected {
+    background: #dcfce7;
+    color: #16a34a;
+  }
+  .version-badge.original {
+    background: #f1f5f9;
+    color: #64748b;
+  }
+  .version-link {
+    font-size: 0.75rem;
+    opacity: 0.8;
+  }
+
+  /* Learning Insights Styles */
+  .learning-summary {
+    margin-bottom: 16px;
+  }
+  
+  .insight-metric {
+    text-align: center;
+    padding: 12px;
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+  }
+  
+  .report-section {
+    margin: 16px 0;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #f1f5f9;
+  }
+  
+  .report-section:last-child {
+    border-bottom: none;
+  }
+  
+  .report-section h5 {
+    margin: 0 0 8px 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text);
+  }
+  
+  .tunnie-report {
+    font-size: 0.9rem;
+  }
+
+  /* Output Browser */
+  .vendor-group { margin-bottom: 16px; }
+  .vendor-group h3 {
+    font-size: 1rem;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .json-list { list-style: none; }
+  .json-list li {
+    padding: 6px 12px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .json-list li:hover { background: #f8fafc; }
+
+  /* JSON viewer modal */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal {
+    background: white;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 800px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+  }
+  .modal-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .modal-header h3 { font-size: 1rem; }
+  .modal-close {
+    background: none; border: none; font-size: 1.5rem;
+    cursor: pointer; color: var(--text2);
+  }
+  .modal-body {
+    padding: 16px 20px;
+    overflow-y: auto;
+    flex: 1;
+  }
+  .modal-body pre {
+    background: #f8fafc;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+
+  /* Review panel inside modal */
+  .review-banner {
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 14px;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .review-banner.needs-review {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #dc2626;
+  }
+  .review-banner.all-good {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: #16a34a;
+  }
+  .review-field-list {
+    list-style: none;
+    margin: 8px 0;
+  }
+  .review-field-list li {
+    padding: 10px 14px;
+    margin-bottom: 6px;
+    border-radius: 8px;
+    border: 1px solid #fecaca;
+    background: #fff5f5;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .review-field-list li .field-name {
+    font-weight: 600;
+    min-width: 160px;
+    color: #991b1b;
+    font-size: 0.85rem;
+  }
+  .review-field-list li .field-value {
+    flex: 1;
+    font-family: monospace;
+    font-size: 0.85rem;
+    color: var(--text);
+  }
+  .review-field-list li input {
+    flex: 1;
+    padding: 6px 10px;
+    border: 1px solid #fca5a5;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-family: monospace;
+    min-width: 150px;
+  }
+  .review-field-list li input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+  }
+  .review-field-list li .field-score {
+    font-size: 0.75rem;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: #fee2e2;
+    color: #dc2626;
+    white-space: nowrap;
+  }
+
+  /* Page-based field grouping */
+  .page-group {
+    margin-bottom: 16px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+  .page-group-header {
+    padding: 12px 16px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+  }
+  .page-group-content {
+    padding: 12px;
+  }
+  .page-source-badge {
+    font-size: 0.7rem;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: var(--primary);
+    color: white;
+    font-weight: 600;
+    margin-left: 6px;
+  }
+  .add-field-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 12px;
+    border: 1px dashed var(--border);
+    background: transparent;
+    border-radius: 6px;
+    color: var(--text2);
+    font-size: 0.85rem;
+    cursor: pointer;
+    margin-top: 8px;
+  }
+  .add-field-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+  }
+  .field-controls {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .delete-field-btn {
+    padding: 2px 6px;
+    background: none;
+    border: none;
+    color: var(--error);
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 1rem;
+  }
+  .delete-field-btn:hover {
+    background: #fee2e2;
+  }
+  .page-text-preview {
+    margin-top: 8px;
+  }
+  .page-text-toggle {
+    background: none;
+    border: 1px solid var(--border);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    color: var(--text2);
+    cursor: pointer;
+  }
+  .page-text-content {
+    display: none;
+    margin-top: 8px;
+    padding: 12px;
+    background: #f8fafc;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-family: monospace;
+    font-size: 0.8rem;
+    max-height: 200px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+  }
+  .page-text-content.show {
+    display: block;
+  }
+  
+  /* Page color themes */
+  .page-1 { background: #eff6ff; border-color: #bfdbfe; }
+  .page-1 .page-group-header { background: #dbeafe; }
+  .page-2 { background: #f0fdf4; border-color: #bbf7d0; }
+  .page-2 .page-group-header { background: #dcfce7; }
+  .page-3 { background: #fff7ed; border-color: #fed7aa; }
+  .page-3 .page-group-header { background: #fef3c7; }
+  .page-4 { background: #fdf2f8; border-color: #fbcfe8; }
+  .page-4 .page-group-header { background: #fce7f3; }
+  .page-5 { background: #f5f3ff; border-color: #ddd6fe; }
+  .page-5 .page-group-header { background: #ede9fe; }
+  .page-unlocated { background: #f8fafc; border-color: #e2e8f0; }
+  .page-unlocated .page-group-header { background: #f1f5f9; }
+  .modal-footer {
+    padding: 12px 20px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+  .tab-bar {
+    display: flex;
+    gap: 0;
+    border-bottom: 2px solid var(--border);
+    margin-bottom: 14px;
+  }
+  .tab-bar button {
+    padding: 8px 20px;
+    border: none;
+    background: none;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text2);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    transition: all 0.15s;
+  }
+  .tab-bar button.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+  }
+  .tab-bar button:hover:not(.active) { color: var(--text); }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* Status message */
+  .status-msg {
+    margin-top: 12px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    display: none;
+  }
+  .status-msg.show { display: block; }
+  .status-msg.info { background: #eff6ff; color: #1d4ed8; }
+  .status-msg.success { background: #dcfce7; color: #15803d; }
+  .status-msg.error { background: #fee2e2; color: #dc2626; }
+
+  
+  /* Responsive */
+  @media (max-width: 640px) {
+    .container { padding: 12px; }
+    header h1 { font-size: 1.4rem; }
+    .drop-zone { padding: 32px 16px; }
+    .btn-row { flex-direction: column; }
+    .btn { width: 100%; justify-content: center; }
+  }
+
+  /* ─── Collapsible Card Styles ─────────────────────────── */
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 0 0 16px 0;
+  }
+  .card-header h2 {
+    margin: 0;
+  }
+  .collapse-btn {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 12px;
+    cursor: pointer;
+    color: var(--text2);
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .collapse-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+  }
+  .card-content {
+    transition: all 0.3s ease;
+    overflow: hidden;
+  }
+  .card-content.collapsed {
+    max-height: 0;
+    opacity: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+  .card-content.expanded {
+    max-height: 2000px;
+    opacity: 1;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="container">
+    <h1>📄 PO PDF 特徵提取工具</h1>
+    <p>上傳 PO 文件 → 自動辨識廠商 → 輸出結構化 JSON</p>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- Upload Card -->
+  <div class="card">
+    <h2><span class="icon">📤</span> 上傳文件</h2>
+    <div class="drop-zone" id="dropZone">
+      <div class="icon-upload">📁</div>
+      <p>拖曳 PDF 檔案至此，或<strong>點擊選擇</strong></p>
+      <p class="hint">支援多檔上傳，限 PDF 格式，單次上限 50MB</p>
+      <input type="file" id="fileInput" multiple accept=".pdf" style="display:none">
+    </div>
+
+    <div class="file-list" id="fileList"></div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" id="btnUpload" disabled>
+        🚀 上傳並提取
+      </button>
+      <button class="btn btn-secondary" id="btnClear" style="display:none">
+        🗑️ 清除列表
+      </button>
+      <button class="btn btn-success" id="btnProcessAll">
+        📂 處理 import_doc 全部檔案
+      </button>
+    </div>
+
+    <div class="progress-bar" id="progressBar">
+      <div class="fill" id="progressFill"></div>
+    </div>
+    <div class="status-msg" id="statusMsg"></div>
+  </div>
+
+  <!-- Pretrain Card -->
+  <div class="card">
+    <div class="card-header">
+      <h2><span class="icon">🧠</span> 預訓練</h2>
+      <button class="collapse-btn" id="pretrainCollapseBtn" onclick="togglePretrain()">
+        <span id="pretrainCollapseIcon">▶</span> 展開
+      </button>
+    </div>
+    <div class="card-content collapsed" id="pretrainContent">
+      <p style="color:var(--text2);font-size:0.9rem;margin-bottom:16px;">
+        提供 PDF 文件和對應的欄位資料，讓系統預先學習抽取模式，提升後續處理準確率
+      </p>
+    
+    <div class="drop-zone" id="pretrainDropZone" style="padding:24px;">
+      <div class="icon-upload">📁</div>
+      <p>拖曳單一 PDF 檔案至此，或<strong>點擊選擇</strong></p>
+      <p class="hint">僅支援單檔上傳，用於預訓練</p>
+      <input type="file" id="pretrainFileInput" accept=".pdf" style="display:none">
+    </div>
+
+    <div id="pretrainFileSelected" style="display:none;margin-top:12px;">
+      <div class="file-item">
+        <span style="font-size:1.2rem">📄</span>
+        <span class="name" id="pretrainFileName"></span>
+        <span class="size" id="pretrainFileSize"></span>
+        <button class="remove" id="pretrainRemoveFile">&times;</button>
+      </div>
+    </div>
+
+    <div style="margin-top:16px;">
+      <label style="display:block;margin-bottom:8px;font-weight:600;">供應商:</label>
+      <select id="pretrainVendorSelect" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;">
+        <option value="">自動偵測</option>
+        <option value="byd">BYD</option>
+        <option value="siemens">Siemens</option>
+        <option value="kaifa">Kaifa</option>
+        <option value="desay_sv">DESAY SV</option>
+        <option value="custom">新增供應商...</option>
+      </select>
+    </div>
+
+    <div id="customVendorDiv" style="display:none;margin-top:8px;">
+      <label style="display:block;margin-bottom:4px;color:var(--text2);font-size:0.9rem;">新供應商 ID:</label>
+      <input type="text" id="customVendorId" placeholder="例如：new_vendor" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;">
+    </div>
+
+    <div style="margin-top:16px;">
+      <h4 style="margin-bottom:8px;">欄位對照表</h4>
+      <p style="color:var(--text2);font-size:0.85rem;margin-bottom:8px;">只需填入您確定知道的欄位，空白欄位會被忽略</p>
+      <div style="max-height:300px;overflow-y:auto;border:1px solid var(--border);border-radius:6px;">
+        <table style="width:100%;border-collapse:collapse;font-size:0.9rem;">
+          <thead>
+            <tr style="background:#f8fafc;">
+              <th style="text-align:left;padding:8px 12px;border-bottom:1px solid var(--border);font-weight:600;">欄位名稱</th>
+              <th style="text-align:left;padding:8px 12px;border-bottom:1px solid var(--border);font-weight:600;">正確值</th>
+            </tr>
+          </thead>
+          <tbody id="pretrainFieldsTable">
+            <tr>
+              <td style="padding:6px 12px;border-bottom:1px solid #f1f5f9;">purchase_info.po_number</td>
+              <td style="padding:6px 12px;border-bottom:1px solid #f1f5f9;"><input type="text" data-field="purchase_info.po_number" style="width:100%;padding:4px;border:1px solid var(--border);border-radius:4px;"></td>
+            </tr>
+            <tr>
+              <td style="padding:6px 12px;border-bottom:1px solid #f1f5f9;">purchase_info.date</td>
+              <td style="padding:6px 12px;border-bottom:1px solid #f1f5f9;"><input type="text" data-field="purchase_info.date" style="width:100%;padding:4px;border:1px solid var(--border);border-radius:4px;"></td>
+            </tr>
+            <tr>
+              <td style="padding:6px 12px;border-bottom:1px solid #f1f5f9;">purchase_info.buyer</td>
+              <td style="padding:6px 12px;border-bottom:1px solid #f1f5f9;"><input type="text" data-field="purchase_info.buyer" style="width:100%;padding:4px;border:1px solid var(--border);border-radius:4px;"></td>
+            </tr>
+            <tr>
+              <td style="padding:6px 12px;border-bottom:1px solid #f1f5f9;">purchase_info.currency</td>
+              <td style="padding:6px 12px;border-bottom:1px solid #f1f5f9;"><input type="text" data-field="purchase_info.currency" style="width:100%;padding:4px;border:1px solid var(--border);border-radius:4px;"></td>
+            </tr>
+            <tr>
+              <td style="padding:6px 12px;border-bottom:1px solid #f1f5f9;">purchase_info.total_amount</td>
+              <td style="padding:6px 12px;border-bottom:1px solid #f1f5f9;"><input type="text" data-field="purchase_info.total_amount" style="width:100%;padding:4px;border:1px solid var(--border);border-radius:4px;"></td>
+            </tr>
+            <tr>
+              <td style="padding:6px 12px;border-bottom:1px solid #f1f5f9;">vendor_info.name</td>
+              <td style="padding:6px 12px;border-bottom:1px solid #f1f5f9;"><input type="text" data-field="vendor_info.name" style="width:100%;padding:4px;border:1px solid var(--border);border-radius:4px;"></td>
+            </tr>
+            <tr>
+              <td style="padding:6px 12px;border-bottom:1px solid #f1f5f9;">vendor_info.address</td>
+              <td style="padding:6px 12px;border-bottom:1px solid #f1f5f9;"><input type="text" data-field="vendor_info.address" style="width:100%;padding:4px;border:1px solid var(--border);border-radius:4px;"></td>
+            </tr>
+            <tr>
+              <td style="padding:6px 12px;border-bottom:1px solid #f1f5f9;">bill_to.company_name</td>
+              <td style="padding:6px 12px;border-bottom:1px solid #f1f5f9;"><input type="text" data-field="bill_to.company_name" style="width:100%;padding:4px;border:1px solid var(--border);border-radius:4px;"></td>
+            </tr>
+            <tr>
+              <td style="padding:6px 12px;border-bottom:1px solid #f1f5f9;">ship_to.company_name</td>
+              <td style="padding:6px 12px;border-bottom:1px solid #f1f5f9;"><input type="text" data-field="ship_to.company_name" style="width:100%;padding:4px;border:1px solid var(--border);border-radius:4px;"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <button class="btn btn-secondary" id="addPretrainField" style="margin-top:8px;padding:4px 12px;font-size:0.85rem;">➕ 新增自訂欄位</button>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" id="btnPretrain" disabled>
+        🧠 開始預訓練
+      </button>
+    </div>
+
+      <div id="pretrainResults" style="display:none;margin-top:16px;padding:12px;border-radius:6px;border:1px solid var(--border);background:#f8fafc;">
+        <h4 style="margin-bottom:8px;">訓練結果</h4>
+        <div id="pretrainResultsContent"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Results Card -->
+  <div class="card results-section" id="resultsSection">`
+    <h2><span class="icon">📊</span> 提取結果</h2>
+    <div style="overflow-x:auto;">
+      <table class="results-table">
+        <thead>
+          <tr>
+            <th>檔案名稱</th>
+            <th>狀態</th>
+            <th>廠商</th>
+            <th>PO 號碼</th>
+            <th>準確率</th>
+            <th>🤖 Qwen仲裁</th>
+            <th>總金額</th>
+            <th>明細數</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="resultsBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Output Browser Card -->
+  <div class="card">
+    <h2><span class="icon">🗂️</span> 輸出瀏覽 <button class="btn btn-secondary" id="btnRefresh" style="padding:4px 12px; font-size:0.8rem; margin-left:auto;">🔄 重新整理</button></h2>
+    <div id="outputBrowser"><p style="color:var(--text2)">尚無輸出結果</p></div>
+  </div>
+
+  <!-- Learning Insights Card -->
+  <div class="card">
+    <div style="display:flex;align-items:center;margin-bottom:16px;">
+      <h2 style="margin:0;"><span class="icon">🧠</span> 學習洞察</h2>
+      <button class="btn btn-secondary" id="btnLoadInsights" style="padding:4px 12px; font-size:0.8rem; margin-left:auto;">📊 載入報告</button>
+      <button class="btn btn-secondary" id="btnTunnieReport" style="padding:4px 12px; font-size:0.8rem; margin-left:8px;">📋 TUNNIE 報告</button>
+    </div>
+    <div id="learningInsights">
+      <p style="color:var(--text2);font-size:0.9rem;">點擊「載入報告」查看系統學習狀況和改進建議</p>
+    </div>
+  </div>
+
+</div>
+
+<!-- JSON Viewer Modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modalTitle">JSON 檢視</h3>
+      <button class="modal-close" id="modalClose">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="tab-bar" id="tabBar">
+        <button class="active" data-tab="tab-review">📋 審核修正</button>
+        <button data-tab="tab-json">📄 JSON 原始資料</button>
+      </div>
+      <div id="tab-review" class="tab-content active">
+        <div id="reviewBanner"></div>
+        <ul class="review-field-list" id="reviewFields"></ul>
+        <div id="reviewAllFields"></div>
+      </div>
+      <div id="tab-json" class="tab-content">
+        <pre id="modalContent"></pre>
+      </div>
+    </div>
+    <div class="modal-footer" id="modalFooter" style="display:none;">
+      <button class="btn btn-secondary" id="btnCancelEdit">取消</button>
+      <button class="btn btn-primary" id="btnSaveCorrection">💾 儲存校正</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+const fileList = document.getElementById('fileList');
+const btnUpload = document.getElementById('btnUpload');
+const btnClear = document.getElementById('btnClear');
+const btnProcessAll = document.getElementById('btnProcessAll');
+const btnRefresh = document.getElementById('btnRefresh');
+const progressBar = document.getElementById('progressBar');
+const progressFill = document.getElementById('progressFill');
+const statusMsg = document.getElementById('statusMsg');
+const resultsSection = document.getElementById('resultsSection');
+const resultsBody = document.getElementById('resultsBody');
+const outputBrowser = document.getElementById('outputBrowser');
+const modal = document.getElementById('modal');
+const modalTitle = document.getElementById('modalTitle');
+const modalContent = document.getElementById('modalContent');
+const modalClose = document.getElementById('modalClose');
+const modalFooter = document.getElementById('modalFooter');
+const reviewBanner = document.getElementById('reviewBanner');
+const reviewFields = document.getElementById('reviewFields');
+const reviewAllFields = document.getElementById('reviewAllFields');
+const tabBar = document.getElementById('tabBar');
+const btnSaveCorrection = document.getElementById('btnSaveCorrection');
+const btnCancelEdit = document.getElementById('btnCancelEdit');
+
+// Learning insights elements
+const btnLoadInsights = document.getElementById('btnLoadInsights');
+const btnTunnieReport = document.getElementById('btnTunnieReport');
+const learningInsights = document.getElementById('learningInsights');
+
+// Pretrain elements
+const pretrainDropZone = document.getElementById('pretrainDropZone');
+const pretrainFileInput = document.getElementById('pretrainFileInput');
+const pretrainFileSelected = document.getElementById('pretrainFileSelected');
+const pretrainFileName = document.getElementById('pretrainFileName');
+const pretrainFileSize = document.getElementById('pretrainFileSize');
+const pretrainRemoveFile = document.getElementById('pretrainRemoveFile');
+const pretrainVendorSelect = document.getElementById('pretrainVendorSelect');
+const customVendorDiv = document.getElementById('customVendorDiv');
+const customVendorId = document.getElementById('customVendorId');
+const pretrainFieldsTable = document.getElementById('pretrainFieldsTable');
+const addPretrainField = document.getElementById('addPretrainField');
+const btnPretrain = document.getElementById('btnPretrain');
+const pretrainResults = document.getElementById('pretrainResults');
+const pretrainResultsContent = document.getElementById('pretrainResultsContent');
+
+let selectedFiles = [];
+let currentJsonPath = '';   // Track currently open file for saving corrections
+let currentJsonData = null; // Full JSON data of the viewed file
+
+// ─── Drop Zone ─────────────────────────
+dropZone.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', (e) => addFiles(e.target.files));
+
+dropZone.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  dropZone.classList.add('dragover');
+});
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', (e) => {
+  e.preventDefault();
+  dropZone.classList.remove('dragover');
+  addFiles(e.dataTransfer.files);
+});
+
+function addFiles(files) {
+  for (const f of files) {
+    if (f.name.toLowerCase().endsWith('.pdf')) {
+      selectedFiles.push(f);
+    }
+  }
+  renderFileList();
+}
+
+function renderFileList() {
+  fileList.innerHTML = '';
+  selectedFiles.forEach((f, i) => {
+    const div = document.createElement('div');
+    div.className = 'file-item';
+    div.innerHTML = `
+      <span style="font-size:1.2rem">📄</span>
+      <span class="name">${esc(f.name)}</span>
+      <span class="size">${formatSize(f.size)}</span>
+      <button class="remove" data-idx="${i}">&times;</button>
+    `;
+    fileList.appendChild(div);
+  });
+  btnUpload.disabled = selectedFiles.length === 0;
+  btnClear.style.display = selectedFiles.length > 0 ? '' : 'none';
+
+  fileList.querySelectorAll('.remove').forEach(btn => {
+    btn.addEventListener('click', () => {
+      selectedFiles.splice(+btn.dataset.idx, 1);
+      renderFileList();
+    });
+  });
+}
+
+btnClear.addEventListener('click', () => {
+  selectedFiles = [];
+  fileInput.value = '';
+  renderFileList();
+});
+
+// ─── Upload & Process ──────────────────
+btnUpload.addEventListener('click', async () => {
+  if (selectedFiles.length === 0) return;
+  const formData = new FormData();
+  selectedFiles.forEach(f => formData.append('files', f));
+
+  showProgress(true);
+  showStatus('info', `正在上傳並處理 ${selectedFiles.length} 個檔案...`);
+  btnUpload.disabled = true;
+
+  try {
+    const resp = await fetch('/upload', { method: 'POST', body: formData });
+    const data = await resp.json();
+    if (data.error) {
+      showStatus('error', data.error);
+    } else {
+      const ok = data.results.filter(r => r.status === 'success').length;
+      const fail = data.results.length - ok;
+      showStatus('success', `完成！成功 ${ok} 個，失敗 ${fail} 個`);
+      renderResults(data.results);
+    }
+  } catch (e) {
+    showStatus('error', `上傳失敗: ${e.message}`);
+  }
+
+  showProgress(false);
+  selectedFiles = [];
+  fileInput.value = '';
+  renderFileList();
+  loadOutputBrowser();
+});
+
+btnProcessAll.addEventListener('click', async () => {
+  showProgress(true);
+  showStatus('info', '正在掃描 import_doc/ 並處理所有 PDF...');
+  btnProcessAll.disabled = true;
+
+  try {
+    const resp = await fetch('/process-all', { method: 'POST' });
+    const data = await resp.json();
+    if (data.error) {
+      showStatus('error', data.error);
+    } else {
+      const ok = data.results.filter(r => r.status === 'success').length;
+      const fail = data.results.length - ok;
+      showStatus('success', `完成！成功 ${ok} 個，失敗 ${fail} 個`);
+      renderResults(data.results);
+    }
+  } catch (e) {
+    showStatus('error', `處理失敗: ${e.message}`);
+  }
+
+  showProgress(false);
+  btnProcessAll.disabled = false;
+  loadOutputBrowser();
+});
+
+// ─── Results Table ─────────────────────
+function renderResults(results) {
+  resultsSection.classList.add('show');
+  resultsBody.innerHTML = '';
+  results.forEach(r => {
+    const tr = document.createElement('tr');
+    if (r.status === 'success') {
+      const pct = r.accuracy_pct || 0;
+      const accClass = pct >= 90 ? 'accuracy-high' : (pct >= 75 ? 'accuracy-med' : 'accuracy-low');
+      const reviewBadge = r.review_required
+        ? `<span class="badge badge-review">⚠ 需審核 (${(r.review_fields||[]).length})</span>`
+        : `<span class="badge badge-success">✓ 通過</span>`;
+      
+      // 🎯 Qwen執行指示器
+      const qwenIndicator = createQwenBadgeHtml(r._qwen_execution_indicator);
+      
+      tr.innerHTML = `
+        <td>${esc(r.filename)}</td>
+        <td>${reviewBadge}</td>
+        <td><span class="badge badge-vendor">${esc(r.vendor_folder)}</span></td>
+        <td>${esc(r.po_number)}</td>
+        <td>
+          <div class="accuracy-bar ${accClass}">
+            <div class="bar"><div class="fill" style="width:${pct}%"></div></div>
+            <span>${pct.toFixed(1)}%</span>
+          </div>
+        </td>
+        <td>${qwenIndicator}</td>
+        <td>${esc(r.total_amount)}</td>
+        <td>${r.item_count}</td>
+        <td>
+          <a class="action-link" href="#" onclick="viewJson('${esc(r.json_path)}');return false;">${r.review_required ? '🔍 審核' : '檢視'}</a>
+          <a class="action-link" href="/download/${encodeURIComponent(r.json_path)}">下載</a>
+        </td>
+      `;
+    } else {
+      tr.innerHTML = `
+        <td>${esc(r.filename)}</td>
+        <td><span class="badge badge-error">✗ 失敗</span></td>
+        <td colspan="7" style="color:var(--error)">${esc(r.message || '')}</td>
+      `;
+    }
+    resultsBody.appendChild(tr);
+  });
+}
+
+// 🎯 Qwen執行狀態標記生成器
+function createQwenBadgeHtml(indicator) {
+  if (!indicator) {
+    return '<span class="qwen-unavailable" title="Qwen執行資訊不可用">❓ 資訊不明</span>';
+  }
+  
+  const status = indicator.status || '';
+  const badge = indicator.badge || '';
+  const message = indicator.message || '';
+  const cssClass = indicator.css_class || '';
+  const priority = indicator.priority || 'LOW';
+  const details = indicator.details || {};
+  
+  // 建立詳細資訊tooltip
+  let tooltipText = message;
+  if (details.confidence_score) {
+    tooltipText += `\\n信心分數: ${details.confidence_score}`;
+  }
+  if (details.api_calls > 0) {
+    tooltipText += `\\nAPI調用: ${details.api_calls}次`;
+  }
+  if (details.record_id) {
+    tooltipText += `\\n學習記錄: ${details.record_id}`;
+  }
+  
+  // 根據狀態決定顯示樣式
+  if (status === '🤖 QWEN_EXECUTED') {
+    return `<span class="qwen-executed" title="${tooltipText}">🎯 已執行</span>`;
+  } else if (status === '⚠️ QWEN_ATTEMPTED') {
+    return `<span class="qwen-attempted" title="${tooltipText}">⚠️ 嘗試中</span>`;
+  } else if (status === '✅ HIGH_CONFIDENCE') {
+    return `<span class="high-confidence" title="${tooltipText}">✅ 高信心</span>`;
+  } else if (status === '❌ QWEN_UNAVAILABLE') {
+    return `<span class="qwen-unavailable" title="${tooltipText}">❌ 不可用</span>`;
+  } else if (status === '📜 LEGACY_DATA') {
+    return `<span class="legacy-data-badge" title="${tooltipText}">📜 舊數據</span>`;
+  } else {
+    // 通用標記
+    return `<span class="${cssClass}" title="${tooltipText}">${badge}</span>`;
+  }
+}
+
+// ─── Output Browser ────────────────────
+btnRefresh.addEventListener('click', loadOutputBrowser);
+
+async function loadOutputBrowser() {
+  try {
+    const resp = await fetch('/results');
+    const data = await resp.json();
+    const vendors = Object.keys(data);
+    if (vendors.length === 0) {
+      outputBrowser.innerHTML = '<p style="color:var(--text2)">尚無輸出結果</p>';
+      return;
+    }
+    
+    let html = '';
+    vendors.forEach(v => {
+      const vendorInfo = data[v];
+      const files = vendorInfo.files || [];
+      const correctedFiles = vendorInfo.corrected_files || [];
+      
+      html += `<div class="vendor-group">
+        <h3><span class="badge badge-vendor">${esc(v)}</span> ${files.length} 個檔案</h3>
+        <ul class="json-list">`;
+        
+      files.forEach(f => {
+        const fp = v + '/' + f;
+        const isCorrected = correctedFiles.includes(f);
+        const statusIcon = isCorrected ? '📝' : '📄';
+        const statusText = isCorrected ? '已修正' : '原始版';
+        const statusClass = isCorrected ? 'corrected' : 'original';
+        
+        html += `<li>
+          <span>${statusIcon} ${esc(f)} <small class="version-badge ${statusClass}">${statusText}</small></span>
+          <span>
+            <a class="action-link" href="#" onclick="viewJson('${esc(fp)}');return false;">檢視</a>`;
+            
+        // Add version switch links if corrected version exists
+        if (isCorrected) {
+          html += `
+            <a class="action-link version-link" href="#" onclick="viewOriginal('${esc(fp)}');return false;">原始版</a>
+            <a class="action-link version-link" href="#" onclick="viewCorrected('${esc(fp)}');return false;">修正版</a>`;
+        }
+        
+        html += `
+            <a class="action-link" href="/download/${encodeURIComponent(fp)}">下載</a>
+          </span>
+        </li>`;
+      });
+      
+      html += '</ul></div>';
+    });
+    
+    outputBrowser.innerHTML = html;
+  } catch (e) {
+    outputBrowser.innerHTML = `<p style="color:var(--error)">載入失敗: ${e.message}</p>`;
+  }
+}
+
+// Version-specific view functions
+async function viewOriginal(path) {
+  currentJsonPath = path;
+  modalTitle.textContent = path + ' 📄(原始版本)';
+  modalContent.textContent = 'Loading...';
+  reviewBanner.innerHTML = '';
+  reviewFields.innerHTML = '';
+  reviewAllFields.innerHTML = '';
+  modal.classList.add('show');
+
+  // Switch to review tab  
+  tabBar.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+  tabBar.querySelector('[data-tab="tab-review"]').classList.add('active');
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-review').classList.add('active');
+
+  try {
+    const resp = await fetch('/view-original/' + encodeURIComponent(path));
+    const data = await resp.json();
+    currentJsonData = data;
+    modalContent.textContent = JSON.stringify(data, null, 2);
+    renderReviewPanel(data);
+  } catch (e) {
+    modalContent.textContent = 'Error: ' + e.message;
+    reviewBanner.innerHTML = `<div class="review-banner needs-review">❌ 載入失敗: ${e.message}</div>`;
+  }
+}
+
+async function viewCorrected(path) {
+  currentJsonPath = path;
+  modalTitle.textContent = path + ' 📝(已修正版本)';
+  modalContent.textContent = 'Loading...';
+  reviewBanner.innerHTML = '';
+  reviewFields.innerHTML = '';
+  reviewAllFields.innerHTML = '';
+  modal.classList.add('show');
+
+  // Switch to review tab
+  tabBar.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+  tabBar.querySelector('[data-tab="tab-review"]').classList.add('active');
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-review').classList.add('active');
+
+  try {
+    const resp = await fetch('/view-corrected/' + encodeURIComponent(path));
+    const data = await resp.json();
+    currentJsonData = data;
+    modalContent.textContent = JSON.stringify(data, null, 2);
+    renderReviewPanel(data);
+  } catch (e) {
+    modalContent.textContent = 'Error: ' + e.message;
+    reviewBanner.innerHTML = `<div class="review-banner needs-review">❌ 載入失敗: ${e.message}</div>`;
+  }
+}
+
+// ─── JSON Viewer Modal ─────────────────
+// Tab switching
+tabBar.querySelectorAll('button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    tabBar.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.getElementById(btn.dataset.tab).classList.add('active');
+  });
+});
+
+async function viewJson(path) {
+  currentJsonPath = path;
+  modalTitle.textContent = path;
+  modalContent.textContent = 'Loading...';
+  reviewBanner.innerHTML = '';
+  reviewFields.innerHTML = '';
+  reviewAllFields.innerHTML = '';
+  modal.classList.add('show');
+
+  // Switch to review tab by default
+  tabBar.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+  tabBar.querySelector('[data-tab="tab-review"]').classList.add('active');
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-review').classList.add('active');
+
+  try {
+    const resp = await fetch('/view/' + encodeURIComponent(path));
+    const data = await resp.json();
+    currentJsonData = data;
+    modalContent.textContent = JSON.stringify(data, null, 2);
+    
+    // Update modal title with version indicator
+    const versionIndicator = data._is_corrected ? ' 📝(已修正版本)' : ' 📄(原始版本)';
+    modalTitle.textContent = path + versionIndicator;
+    
+    renderReviewPanel(data);
+  } catch (e) {
+    modalContent.textContent = 'Error: ' + e.message;
+    reviewBanner.innerHTML = `<div class="review-banner needs-review">❌ 載入失敗: ${e.message}</div>`;
+  }
+}
+
+function renderReviewPanel(data) {
+  const reviewRequired = data._review_required || false;
+  const reviewFieldNames = data._review_fields || [];
+  const accuracyPct = data._accuracy_pct || 0;
+  const confidence = data._confidence || {};
+  const pageInfo = data._page_info || { total_pages: 1, pages: [] };
+  const fieldSources = data._field_sources || {};
+  const isCorrected = data._is_corrected || false;
+
+  // Banner with version indicator
+  const versionBadge = isCorrected 
+    ? '<span style="background:#10b981;color:white;padding:2px 8px;border-radius:4px;font-size:11px;margin-left:8px;">📝 已修正版本</span>'
+    : '<span style="background:#6b7280;color:white;padding:2px 8px;border-radius:4px;font-size:11px;margin-left:8px;">📄 原始版本</span>';
+    
+  // Version switch buttons - only show if not in forced view mode
+  const isOriginalView = data._is_original_view || false;
+  const isCorrectedView = data._is_corrected_view || false;
+  let versionSwitchButtons = '';
+  
+  if (!isOriginalView && !isCorrectedView) {
+    // Default view mode - show switch options
+    versionSwitchButtons = `
+      <div style="margin-top:8px;">[
+        <a href="#" onclick="viewOriginal('${currentJsonPath}');return false;" style="color:#6b7280;font-size:0.8rem;">📄 檢視原始版本</a> |
+        <a href="#" onclick="viewCorrected('${currentJsonPath}');return false;" style="color:#16a34a;font-size:0.8rem;">📝 檢視修正版本</a> |
+        <a href="#" onclick="viewJson('${currentJsonPath}');return false;" style="color:#2563eb;font-size:0.8rem;">🔄 智能檢視</a>
+      ]</div>`;
+  } else if (isOriginalView) {
+    // Forced original view
+    versionSwitchButtons = `
+      <div style="margin-top:8px;">[
+        <span style="color:#6b7280;font-size:0.8rem;">📄 原始版本</span> |
+        <a href="#" onclick="viewCorrected('${currentJsonPath}');return false;" style="color:#16a34a;font-size:0.8rem;">📝 檢視修正版本</a> |
+        <a href="#" onclick="viewJson('${currentJsonPath}');return false;" style="color:#2563eb;font-size:0.8rem;">🔄 智能檢視</a>
+      ]</div>`;
+  } else if (isCorrectedView) {
+    // Forced corrected view
+    versionSwitchButtons = `
+      <div style="margin-top:8px;">[
+        <a href="#" onclick="viewOriginal('${currentJsonPath}');return false;" style="color:#6b7280;font-size:0.8rem;">📄 檢視原始版本</a> |
+        <span style="color:#16a34a;font-size:0.8rem;">📝 修正版本</span> |
+        <a href="#" onclick="viewJson('${currentJsonPath}');return false;" style="color:#2563eb;font-size:0.8rem;">🔄 智能檢視</a>
+      ]</div>`;
+  }
+    
+  if (reviewRequired) {
+    const pctColor = accuracyPct >= 75 ? '#b45309' : '#dc2626';
+    reviewBanner.innerHTML = `
+      <div class="review-banner needs-review">
+        ⚠️ <strong>需人工審核</strong> — 準確率 <strong style="color:${pctColor}">${accuracyPct.toFixed(1)}%</strong>，
+        共 <strong>${reviewFieldNames.length}</strong> 個欄位需要確認或修正
+        ${versionBadge}
+        ${versionSwitchButtons}
+      </div>`;
+    modalFooter.style.display = 'flex';
+  } else {
+    reviewBanner.innerHTML = `
+      <div class="review-banner all-good">
+        ✅ <strong>通過自動檢核</strong> — 準確率 ${accuracyPct.toFixed(1)}%，所有欄位正常
+        ${versionBadge}
+        ${versionSwitchButtons}
+      </div>`;
+    modalFooter.style.display = 'flex';  // Still allow corrections even if passed
+  }
+
+  // Clear existing fields
+  reviewFields.innerHTML = '';
+  reviewAllFields.innerHTML = '';
+
+  // Prepare fields data
+  const allFields = {};
+  const sections = ['purchase_info', 'vendor_info', 'ship_to', 'bill_to'];
+  sections.forEach(section => {
+    const sectionData = data[section] || {};
+    Object.keys(sectionData).forEach(key => {
+      const fieldPath = `${section}.${key}`;
+      const value = sectionData[key] || '';
+      const fieldConf = confidence[fieldPath] || {};
+      const score = fieldConf.score !== undefined ? fieldConf.score : 100;
+      const sources = fieldSources[fieldPath] || [];
+      const isReviewRequired = reviewFieldNames.includes(fieldPath);
+      
+      allFields[fieldPath] = {
+        value,
+        score,
+        reason: fieldConf.reason || '',
+        sources,
+        isReviewRequired
+      };
+    });
+  });
+
+  // Group fields by page
+  const fieldsByPage = {};
+  const unlocatedFields = {};
+  
+  Object.keys(allFields).forEach(fieldPath => {
+    const field = allFields[fieldPath];
+    if (field.sources.length > 0) {
+      field.sources.forEach(pageNum => {
+        if (!fieldsByPage[pageNum]) fieldsByPage[pageNum] = {};
+        fieldsByPage[pageNum][fieldPath] = field;
+      });
+    } else {
+      unlocatedFields[fieldPath] = field;
+    }
+  });
+
+  // Render flagged fields first (if any)
+  if (reviewFieldNames.length > 0) {
+    const flaggedDiv = document.createElement('div');
+    flaggedDiv.innerHTML = '<h4 style="color:#dc2626;margin-bottom:8px;">🔴 需要審核的欄位</h4>';
+    const flaggedList = document.createElement('ul');
+    flaggedList.className = 'review-field-list';
+    
+    reviewFieldNames.forEach(fieldPath => {
+      const field = allFields[fieldPath] || { value: '', score: 0, reason: '未知', sources: [] };
+      const sources = field.sources.map(p => `P${p}`).join(', ') || '--';
+      const li = document.createElement('li');
+      li.innerHTML = `
+        <span class="field-name">🔴 ${esc(fieldPath)}</span>
+        <span class="field-score">信心 ${field.score} — ${esc(field.reason)}</span>
+        <span class="page-source-badge">${sources}</span>
+        <input type="text" data-field="${esc(fieldPath)}" value="${esc(String(field.value))}" placeholder="輸入正確值...">
+      `;
+      flaggedList.appendChild(li);
+    });
+    
+    flaggedDiv.appendChild(flaggedList);
+    reviewFields.appendChild(flaggedDiv);
+  }
+
+  // Render page-grouped fields
+  const pageGroupsHTML = [];
+  
+  // Render by page number
+  for (let pageNum = 1; pageNum <= pageInfo.total_pages; pageNum++) {
+    const pageFields = fieldsByPage[pageNum] || {};
+    const pageData = pageInfo.pages.find(p => p.page === pageNum);
+    const hasFields = Object.keys(pageFields).length > 0;
+    
+    if (hasFields || pageNum <= 3) { // Always show first 3 pages
+      pageGroupsHTML.push(`
+        <div class="page-group page-${Math.min(pageNum, 6)}">
+          <div class="page-group-header">
+            <span>📄 第 ${pageNum} 頁 (共 ${pageInfo.total_pages} 頁)</span>
+            <button class="page-text-toggle" onclick="togglePageText(${pageNum})">📝 查看原文</button>
+          </div>
+          <div class="page-group-content">
+            <ul class="review-field-list" data-page="${pageNum}">
+              ${Object.keys(pageFields).filter(fp => !reviewFieldNames.includes(fp)).map(fieldPath => {
+                const field = pageFields[fieldPath];
+                const scoreClass = field.score >= 75 ? 'background:#dcfce7;color:#15803d;' : 'background:#fef3c7;color:#b45309;';
+                return `
+                  <li>
+                    <div class="field-controls">
+                      <input type="text" class="field-name-input" value="${esc(fieldPath)}" data-original-field="${esc(fieldPath)}" onchange="updateFieldName(this)">
+                      <span class="field-score" style="${scoreClass}">信心 ${field.score}</span>
+                      <input type="text" data-field="${esc(fieldPath)}" value="${esc(String(field.value))}">
+                      <button class="delete-field-btn" onclick="deleteField('${esc(fieldPath)}', this)">🗑️</button>
+                    </div>
+                  </li>
+                `;
+              }).join('')}
+            </ul>
+            <button class="add-field-btn" onclick="addNewField(${pageNum})">➕ 新增欄位</button>
+            <div class="page-text-preview">
+              <div class="page-text-content" id="pageText${pageNum}">
+                ${pageData ? esc(pageData.text) : '無法載入原文'}
+              </div>
+            </div>
+          </div>
+        </div>
+      `);
+    }
+  }
+  
+  // Render unlocated fields
+  if (Object.keys(unlocatedFields).length > 0) {
+    pageGroupsHTML.push(`
+      <div class="page-group page-unlocated">
+        <div class="page-group-header">
+          <span>📄 未定位欄位</span>
+        </div>
+        <div class="page-group-content">
+          <ul class="review-field-list" data-page="unlocated">
+            ${Object.keys(unlocatedFields).filter(fp => !reviewFieldNames.includes(fp)).map(fieldPath => {
+              const field = unlocatedFields[fieldPath];
+              const scoreClass = field.score >= 75 ? 'background:#dcfce7;color:#15803d;' : 'background:#fef3c7;color:#b45309;';
+              return `
+                <li>
+                  <div class="field-controls">
+                    <input type="text" class="field-name-input" value="${esc(fieldPath)}" data-original-field="${esc(fieldPath)}" onchange="updateFieldName(this)">
+                    <span class="field-score" style="${scoreClass}">信心 ${field.score}</span>
+                    <input type="text" data-field="${esc(fieldPath)}" value="${esc(String(field.value))}">
+                    <button class="delete-field-btn" onclick="deleteField('${esc(fieldPath)}', this)">🗑️</button>
+                  </div>
+                </li>
+              `;
+            }).join('')}
+          </ul>
+          <button class="add-field-btn" onclick="addNewField('unlocated')">➕ 新增欄位</button>
+        </div>
+      </div>
+    `);
+  }
+
+  reviewAllFields.innerHTML = `
+    <div style="margin-top:12px;">
+      <h4 style="margin-bottom:12px;">📝 所有欄位 (按頁面分組)</h4>
+      ${pageGroupsHTML.join('')}
+    </div>
+  `;
+}
+
+function getNestedValue(obj, path) {
+  const parts = path.split('.');
+  let current = obj;
+  for (const p of parts) {
+    if (current == null) return '';
+    current = current[p];
+  }
+  return current;
+}
+
+function setNestedValue(obj, path, value) {
+  const parts = path.split('.');
+  let current = obj;
+  for (let i = 0; i < parts.length - 1; i++) {
+    if (current[parts[i]] == null) current[parts[i]] = {};
+    current = current[parts[i]];
+  }
+  current[parts[parts.length - 1]] = value;
+}
+
+// Save correction
+btnSaveCorrection.addEventListener('click', async () => {
+  if (!currentJsonData || !currentJsonPath) return;
+
+  // Collect all edited values
+  const correctedData = JSON.parse(JSON.stringify(currentJsonData));
+  const fieldInputs = document.querySelectorAll('#reviewFields input[data-field], #reviewAllFields input[data-field]');
+  const nameInputs = document.querySelectorAll('#reviewAllFields .field-name-input');
+  let changedCount = 0;
+  
+  // Handle field name changes and deletions
+  const processedFields = new Set();
+  nameInputs.forEach(nameInput => {
+    const oldName = nameInput.dataset.originalField;
+    const newName = nameInput.value.trim();
+    const valueInput = nameInput.closest('li').querySelector('[data-field]');
+    const newValue = valueInput ? valueInput.value.trim() : '';
+    
+    if (oldName && oldName !== newName) {
+      // Field renamed
+      setNestedValue(correctedData, oldName, ''); // Clear old field
+      if (newName && newValue) {
+        setNestedValue(correctedData, newName, newValue);
+        changedCount++;
+      }
+      processedFields.add(oldName);
+      processedFields.add(newName);
+    } else if (newName) {
+      // Normal field update or new field
+      const oldValue = String(getNestedValue(currentJsonData, newName) || '');
+      if (newValue !== oldValue) {
+        setNestedValue(correctedData, newName, newValue);
+        changedCount++;
+      }
+      processedFields.add(newName);
+    }
+  });
+  
+  // Handle remaining field inputs (flagged fields without name inputs)
+  fieldInputs.forEach(input => {
+    const fieldPath = input.dataset.field;
+    if (!processedFields.has(fieldPath)) {
+      const newVal = input.value.trim();
+      const oldVal = String(getNestedValue(currentJsonData, fieldPath) || '');
+      if (newVal !== oldVal) {
+        setNestedValue(correctedData, fieldPath, newVal);
+        changedCount++;
+      }
+    }
+  });
+
+  if (changedCount === 0) {
+    alert('未偵測到任何修改。若要確認資料無誤，可直接關閉視窗。');
+    return;
+  }
+
+  btnSaveCorrection.disabled = true;
+  btnSaveCorrection.textContent = '⏳ 儲存中...';
+
+  try {
+    const resp = await fetch('/save-correction', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ filepath: currentJsonPath, data: correctedData })
+    });
+    const result = await resp.json();
+    if (result.error) {
+      alert('儲存失敗: ' + result.error);
+    } else {
+      let message = `✅ 校正已儲存！\n修改了 ${changedCount} 個欄位\n路徑: corrected/${result.path}`;
+      
+      // Show learning results if available
+      if (result.learning_stats) {
+        const stats = result.learning_stats;
+        message += `\n\n🧠 自動學習已完成：\n`;
+        message += `• 處理檔案: ${stats.files_processed || 0} 個\n`;
+        message += `• 學習欄位: ${stats.fields_learned || 0} 個\n`;
+        message += `• 生成模式: ${stats.patterns_generated || 0} 個`;
+        if (stats.patterns_generated > 0) {
+          message += `\n\n下次處理相同供應商的文檔時將自動應用這些學習結果！`;
+        }
+      } else if (result.learning_error) {
+        message += `\n\n⚠️ 自動學習失敗: ${result.learning_error}\n請稍後手動觸發學習。`;
+      }
+      
+      alert(message);
+      modal.classList.remove('show');
+      
+      // Refresh results to show updated data
+      loadOutputBrowser();
+    }
+  } catch (e) {
+    alert('儲存失敗: ' + e.message);
+  }
+
+  btnSaveCorrection.disabled = false;
+  btnSaveCorrection.textContent = '💾 儲存校正';
+});
+
+btnCancelEdit.addEventListener('click', () => modal.classList.remove('show'));
+
+modalClose.addEventListener('click', () => modal.classList.remove('show'));
+modal.addEventListener('click', (e) => {
+  if (e.target === modal) modal.classList.remove('show');
+});
+
+// ─── Pretrain Event Handlers ───────────────────────────
+pretrainDropZone.addEventListener('click', () => pretrainFileInput.click());
+pretrainFileInput.addEventListener('change', (e) => handlePretrainFileSelect(e.target.files[0]));
+pretrainRemoveFile.addEventListener('click', clearPretrainFile);
+pretrainVendorSelect.addEventListener('change', handleVendorSelect);
+addPretrainField.addEventListener('click', addNewPretrainField);
+btnPretrain.addEventListener('click', executePretrain);
+
+pretrainDropZone.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  pretrainDropZone.classList.add('dragover');
+});
+
+pretrainDropZone.addEventListener('dragleave', () => {
+  pretrainDropZone.classList.remove('dragover');
+});
+
+pretrainDropZone.addEventListener('drop', (e) => {
+  e.preventDefault();
+  pretrainDropZone.classList.remove('dragover');
+  const files = e.dataTransfer.files;
+  if (files.length > 0) {
+    handlePretrainFileSelect(files[0]);
+  }
+});
+
+// ─── Helpers ───────────────────────────
+function showProgress(active) {
+  if (active) {
+    progressBar.classList.add('active', 'indeterminate');
+  } else {
+    progressBar.classList.remove('active', 'indeterminate');
+  }
+}
+
+function showStatus(type, msg) {
+  statusMsg.className = `status-msg show ${type}`;
+  statusMsg.textContent = msg;
+}
+
+function formatSize(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / 1048576).toFixed(1) + ' MB';
+}
+
+function esc(s) {
+  if (!s) return '';
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+// ─── Field Management Functions ────────────────────────
+function togglePageText(pageNum) {
+  const textDiv = document.getElementById(`pageText${pageNum}`);
+  textDiv.classList.toggle('show');
+}
+
+function addNewField(pageNum) {
+  const pageList = document.querySelector(`[data-page="${pageNum}"]`);
+  if (!pageList) return;
+
+  const fieldName = prompt('請輸入新欄位名稱（例如：purchase_info.remark）:');
+  if (!fieldName || !fieldName.trim()) return;
+
+  if (!fieldName.includes('.')) {
+    alert('欄位名稱格式錯誤，請使用 section.field 格式，例如：purchase_info.remark');
+    return;
+  }
+
+  const fieldValue = prompt('請輸入欄位值（可留空）:') || '';
+
+  const li = document.createElement('li');
+  li.innerHTML = `
+    <div class="field-controls">
+      <input type="text" class="field-name-input" value="${esc(fieldName.trim())}" data-original-field="${esc(fieldName.trim())}" onchange="updateFieldName(this)">
+      <span class="field-score" style="background:#f3f4f6;color:#6b7280;">新增</span>
+      <input type="text" data-field="${esc(fieldName.trim())}" value="${esc(fieldValue)}">
+      <button class="delete-field-btn" onclick="deleteField('${esc(fieldName.trim())}', this)">🗑️</button>
+    </div>
+  `;
+  pageList.appendChild(li);
+}
+
+function deleteField(fieldPath, btnElement) {
+  if (confirm(`確認刪除欄位 "${fieldPath}"？`)) {
+    btnElement.closest('li').remove();
+  }
+}
+
+function updateFieldName(inputElement) {
+  const oldName = inputElement.dataset.originalField;
+  const newName = inputElement.value.trim();
+  
+  if (!newName || newName === oldName) return;
+  
+  if (!newName.includes('.')) {
+    alert('欄位名稱格式錯誤，請使用 section.field 格式');
+    inputElement.value = oldName;
+    return;
+  }
+
+  // Update the data-field attribute of the corresponding value input
+  const valueInput = inputElement.closest('li').querySelector('[data-field]');
+  if (valueInput) {
+    valueInput.setAttribute('data-field', newName);
+  }
+  
+  // Update original field reference
+  inputElement.dataset.originalField = newName;
+  
+  // Update delete button's onclick
+  const deleteBtn = inputElement.closest('li').querySelector('.delete-field-btn');
+  if (deleteBtn) {
+    deleteBtn.setAttribute('onclick', `deleteField('${esc(newName)}', this)`);
+  }
+}
+
+// ─── Pretrain Functions ────────────────────────────
+function togglePretrain() {
+  const content = document.getElementById('pretrainContent');
+  const btn = document.getElementById('pretrainCollapseBtn');
+  const icon = document.getElementById('pretrainCollapseIcon');
+  
+  if (content.classList.contains('expanded')) {
+    content.classList.remove('expanded');
+    content.classList.add('collapsed');
+    icon.textContent = '▶';
+    btn.innerHTML = '<span id="pretrainCollapseIcon">▶</span> 展開';
+  } else {
+    content.classList.remove('collapsed');
+    content.classList.add('expanded');
+    icon.textContent = '▼';
+    btn.innerHTML = '<span id="pretrainCollapseIcon">▼</span> 收合';
+  }
+}
+
+function handlePretrainFileSelect(file) {
+  if (file && file.type === 'application/pdf') {
+    pretrainFileSelected.style.display = 'block';
+    pretrainDropZone.querySelector('p').style.display = 'none';
+    pretrainFileName.textContent = file.name;
+    pretrainFileSize.textContent = `${(file.size / 1024 / 1024).toFixed(2)} MB`;
+    pretrainFileInput.file = file;
+    
+    // Add default field if table is empty
+    const tbody = pretrainFieldsTable.querySelector('tbody');
+    if (tbody.children.length === 0) {
+      addNewPretrainField();
+    }
+  } else {
+    alert('請選擇PDF檔案');
+  }
+}
+
+function clearPretrainFile() {
+  pretrainFileSelected.style.display = 'none';
+  pretrainDropZone.querySelector('p').style.display = 'block';
+  pretrainFieldsTable.querySelector('tbody').innerHTML = '';
+  pretrainFileInput.value = '';
+  pretrainFileInput.file = null;
+  pretrainResults.style.display = 'none';
+}
+
+function handleVendorSelect() {
+  const selectedValue = pretrainVendorSelect.value;
+  customVendorDiv.style.display = selectedValue === 'custom' ? 'block' : 'none';
+}
+
+function addNewPretrainField() {
+  const tbody = pretrainFieldsTable.querySelector('tbody');
+  const rowCount = tbody.children.length + 1;
+  
+  const row = document.createElement('tr');
+  row.innerHTML = `
+    <td>
+      <input type="text" class="pretrain-field-name" placeholder="例: company.name" value="">
+    </td>
+    <td>
+      <input type="text" class="pretrain-field-value" placeholder="輸入正確值">
+    </td>
+    <td>
+      <button type="button" class="btn-delete" onclick="removePretrainField(this)">刪除</button>
+    </td>
+  `;
+  tbody.appendChild(row);
+}
+
+function removePretrainField(btnElement) {
+  const row = btnElement.closest('tr');
+  row.remove();
+}
+
+async function executePretrain() {
+  const file = pretrainFileInput.file;
+  if (!file) {
+    alert('請先選擇PDF檔案');
+    return;
+  }
+
+  const vendor = pretrainVendorSelect.value === 'custom' ? 
+    customVendorId.value.trim() : pretrainVendorSelect.value;
+  
+  if (!vendor) {
+    alert('請選擇或輸入廠商ID');
+    return;
+  }
+
+  // Collect field data
+  const fieldData = {};
+  const rows = pretrainFieldsTable.querySelectorAll('tbody tr');
+  let hasValidFields = false;
+  
+  for (const row of rows) {
+    const fieldName = row.querySelector('.pretrain-field-name').value.trim();
+    const fieldValue = row.querySelector('.pretrain-field-value').value.trim();
+    
+    if (fieldName && fieldValue) {
+      fieldData[fieldName] = fieldValue;
+      hasValidFields = true;
+    }
+  }
+  
+  if (!hasValidFields) {
+    alert('請至少輸入一個有效的欄位和值');
+    return;
+  }
+
+  try {
+    btnPretrain.disabled = true;
+    btnPretrain.textContent = '正在預訓練...';
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('vendor', vendor);
+    formData.append('fields', JSON.stringify(fieldData));
+    
+    const response = await fetch('/pretrain', {
+      method: 'POST',
+      body: formData
+    });
+    
+    if (response.ok) {
+      const result = await response.json();
+      displayPretrainResults(result);
+    } else {
+      const error = await response.text();
+      alert(`預訓練失敗: ${error}`);
+    }
+  } catch (error) {
+    console.error('Pretrain error:', error);
+    alert(`預訓練錯誤: ${error.message}`);
+  } finally {
+    btnPretrain.disabled = false;
+    btnPretrain.textContent = '開始預訓練';
+  }
+}
+
+function displayPretrainResults(result) {
+  pretrainResultsContent.innerHTML = `
+    <h4>預訓練完成 ✅</h4>
+    <p><strong>已學習模式數:</strong> ${result.patterns_learned}</p>
+    <p><strong>處理檔案:</strong> ${result.filename}</p>
+    <p><strong>廠商:</strong> ${result.vendor}</p>
+    <div class="learned-fields">
+      <strong>學習的欄位:</strong>
+      <ul>
+        ${Object.entries(result.fields).map(([field, value]) => 
+          `<li><code>${esc(field)}</code> → ${esc(String(value))}</li>`
+        ).join('')}
+      </ul>
+    </div>
+    <p class="pretrain-note">💡 這些模式已被納入系統，將提升未來相同廠商檔案的處理準確度</p>
+  `;
+  pretrainResults.style.display = 'block';
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// Learning Insights Functions
+// ═══════════════════════════════════════════════════════════════════════
+
+async function loadLearningInsights() {
+  btnLoadInsights.disabled = true;
+  btnLoadInsights.textContent = '⏳ 載入中...';
+  
+  try {
+    const response = await fetch('/learning/insights');
+    const insights = await response.json();
+    
+    if (insights.error) {
+      learningInsights.innerHTML = `<p style="color:var(--error)">載入失敗: ${insights.error}</p>`;
+      return;
+    }
+    
+    renderLearningInsights(insights);
+  } catch (e) {
+    learningInsights.innerHTML = `<p style="color:var(--error)">載入失敗: ${e.message}</p>`;
+  } finally {
+    btnLoadInsights.disabled = false;
+    btnLoadInsights.textContent = '📊 載入報告';
+  }
+}
+
+function renderLearningInsights(insights) {
+  const summary = insights.summary;
+  const vendors = insights.vendor_performance;
+  const fields = insights.field_difficulty;
+  const patterns = insights.pattern_effectiveness;
+  const recommendations = insights.recommendations;
+  
+  learningInsights.innerHTML = `
+    <div class="learning-summary">
+      <h4>📈 學習摘要 (近30天)</h4>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin:12px 0;">
+        <div class="insight-metric">
+          <div style="font-size:1.5rem;font-weight:600;color:var(--primary);">${summary.total_events}</div>
+          <div style="font-size:0.85rem;color:var(--text2);">學習事件</div>
+        </div>
+        <div class="insight-metric">
+          <div style="font-size:1.5rem;font-weight:600;color:var(--success);">${summary.unique_vendors}</div>
+          <div style="font-size:0.85rem;color:var(--text2);">涵蓋供應商</div>
+        </div>
+        <div class="insight-metric">
+          <div style="font-size:1.5rem;font-weight:600;color:#f59e0b;">${summary.unique_fields}</div>
+          <div style="font-size:0.85rem;color:var(--text2);">學習欄位</div>
+        </div>
+        <div class="insight-metric">
+          <div style="font-size:1.5rem;font-weight:600;color:#8b5cf6;">+${summary.avg_confidence_improvement.toFixed(1)}</div>
+          <div style="font-size:0.85rem;color:var(--text2);">平均信心提升</div>
+        </div>
+      </div>
+    </div>
+    
+    ${patterns && !patterns.no_data ? `
+    <div class="pattern-effectiveness">
+      <h4>🎯 Pattern 效果分析</h4>
+      <div style="background:#f8fafc;padding:12px;border-radius:6px;margin:8px 0;">
+        <p><strong>總Pattern數:</strong> ${patterns.total_patterns} | <strong>有效Pattern:</strong> ${patterns.effective_patterns} (${(patterns.effectiveness_rate * 100).toFixed(1)}%)</p>
+        ${patterns.top_patterns.length > 0 ? `
+        <details>
+          <summary style="cursor:pointer;margin-top:8px;">🏆 優秀Pattern清單</summary>
+          <ul style="margin-top:8px;font-size:0.85rem;">
+            ${patterns.top_patterns.slice(0, 5).map(p => 
+              `<li><strong>${p.vendor_id}</strong> - ${p.field_path}: ${(p.success_rate * 100).toFixed(1)}% 成功率 (${p.applications} 次應用)</li>`
+            ).join('')}
+          </ul>
+        </details>
+        ` : ''}
+      </div>
+    </div>
+    ` : ''}
+    
+    ${recommendations && recommendations.length > 0 ? `
+    <div class="recommendations">
+      <h4>💡 改進建議</h4>
+      <ul style="background:#fff7ed;border-left:4px solid #f59e0b;padding:12px;margin:8px 0;font-size:0.9rem;">
+        ${recommendations.map(rec => `<li style="margin-bottom:4px;">${rec}</li>`).join('')}
+      </ul>
+    </div>
+    ` : ''}
+    
+    <div style="margin-top:16px;">
+      <button class="btn btn-secondary" onclick="loadProblematicPatterns()" style="font-size:0.8rem;">⚠️ 檢查問題Pattern</button>
+      <button class="btn btn-secondary" onclick="loadVendorAnalysis()" style="font-size:0.8rem;margin-left:8px;">📊 供應商分析</button>
+    </div>
+  `;
+}
+
+async function loadTunnieReport() {
+  btnTunnieReport.disabled = true;
+  btnTunnieReport.textContent = '⏳ 生成中...';
+  
+  try {
+    const response = await fetch('/learning/tunnie-report');
+    const report = await response.json();
+    
+    if (report.error) {
+      learningInsights.innerHTML = `<p style="color:var(--error)">生成失敗: ${report.error}</p>`;
+      return;
+    }
+    
+    renderTunnieReport(report);
+  } catch (e) {
+    learningInsights.innerHTML = `<p style="color:var(--error)">生成失敗: ${e.message}</p>`;
+  } finally {
+    btnTunnieReport.disabled = false;
+    btnTunnieReport.textContent = '📋 TUNNIE 報告';
+  }
+}
+
+function renderTunnieReport(report) {
+  learningInsights.innerHTML = `
+    <div class="tunnie-report">
+      <h4>🤖 ${report.report_title}</h4>
+      <p style="color:var(--text2);font-size:0.85rem;">生成時間: ${report.generated_at}</p>
+      
+      <div class="report-section">
+        <h5>📋 學習概況</h5>
+        <div style="background:#f0f9ff;padding:12px;border-radius:6px;">
+          <p><strong>學習事件:</strong> ${report.learning_summary.total_events}</p>
+          <p><strong>涵蓋供應商:</strong> ${report.learning_summary.unique_vendors}</p>
+          <p><strong>平均改善:</strong> +${report.learning_summary.avg_confidence_improvement.toFixed(1)} 分</p>
+        </div>
+      </div>
+      
+      ${report.vendor_rankings.length > 0 ? `
+      <div class="report-section">
+        <h5>🏆 供應商學習排行</h5>
+        <ol style="font-size:0.9rem;">
+          ${report.vendor_rankings.slice(0, 5).map(([vendor, stats]) => 
+            `<li><strong>${vendor}</strong>: 平均改善 ${stats.avg_improvement.toFixed(1)} 分 (${stats.improvements}/${stats.events} 成功)</li>`
+          ).join('')}
+        </ol>
+      </div>
+      ` : ''}
+      
+      ${report.problematic_patterns.length > 0 ? `
+      <div class="report-section">
+        <h5>⚠️ 需要關注的Pattern</h5>
+        <ul style="background:#fef3c7;padding:12px;border-radius:6px;font-size:0.85rem;">
+          ${report.problematic_patterns.slice(0, 3).map(p => 
+            `<li><strong>${p.vendor_id}</strong> - ${p.field_path}: ${(p.success_rate * 100).toFixed(1)}% 成功率 - ${p.recommendation}</li>`
+          ).join('')}
+        </ul>
+      </div>
+      ` : ''}
+      
+      <div class="report-section">
+        <h5>💡 行動建議</h5>
+        <ul style="font-size:0.9rem;">
+          ${report.action_recommendations.map(rec => `<li>${rec}</li>`).join('')}
+        </ul>
+      </div>
+    </div>
+  `;
+}
+
+async function loadProblematicPatterns() {
+  try {
+    const response = await fetch('/learning/problematic-patterns');
+    const data = await response.json();
+    
+    if (data.problematic_patterns.length === 0) {
+      alert('🎉 沒有發現問題Pattern！所有Pattern運作良好。');
+      return;
+    }
+    
+    const patternsList = data.problematic_patterns.map(p => 
+      `• ${p.vendor_id} - ${p.field_path}: ${(p.success_rate * 100).toFixed(1)}% 成功率 (${p.total_applications} 次應用)`
+    ).join('\\n');
+    
+    alert(`⚠️ 發現 ${data.problematic_patterns.length} 個需要改進的Pattern:\\n\\n${patternsList}`);
+  } catch (e) {
+    alert('載入失敗: ' + e.message);
+  }
+}
+
+async function loadVendorAnalysis() {
+  const vendor = prompt('請輸入要分析的供應商ID (例如: siemens, byd, kaifa):');
+  if (!vendor) return;
+  
+  try {
+    const response = await fetch(`/learning/vendor/${vendor.toLowerCase()}`);
+    const summary = await response.json();
+    
+    if (summary.error) {
+      alert('分析失敗: ' + summary.error);
+      return;
+    }
+    
+    let message = `📊 ${summary.vendor_id.toUpperCase()} 供應商學習分析\\n\\n`;
+    message += `學習事件: ${summary.total_learning_events}\\n`;
+    message += `學習時間跨度: ${summary.learning_timespan.first_event} ~ ${summary.learning_timespan.last_event}\\n`;
+    message += `涵蓋欄位: ${summary.field_coverage.join(', ')}\\n`;
+    message += `Pattern數量: ${summary.patterns_count}\\n`;
+    message += `平均成功率: ${(summary.avg_pattern_success_rate * 100).toFixed(1)}%\\n\\n`;
+    
+    if (summary.best_patterns.length > 0) {
+      message += '🏆 優秀Pattern:\\n';
+      summary.best_patterns.slice(0, 3).forEach(p => {
+        message += `• ${p.field_path}: ${(p.success_rate * 100).toFixed(1)}% success\\n`;
+      });
+    }
+    
+    alert(message);
+  } catch (e) {
+    alert('載入失敗: ' + e.message);
+  }
+}
+
+// Event Listeners for Learning Insights
+btnLoadInsights.addEventListener('click', loadLearningInsights);
+btnTunnieReport.addEventListener('click', loadTunnieReport);
+
+// Load existing results on page load
+loadOutputBrowser();
+</script>
+
+</body>
+</html>

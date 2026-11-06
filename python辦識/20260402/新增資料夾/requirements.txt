@@ -1,0 +1,46 @@
+# Qwen3-VL 七步管道相依套件清單
+# 使用方式: pip install -r requirements.txt
+
+# 核心套件
+Flask==2.3.3
+flask-cors>=4.0.0
+requests==2.31.0
+opencv-python==4.8.1.78
+Pillow==10.0.0
+
+# OCR 引擎
+paddleocr==2.7.3
+paddlepaddle==2.5.2
+
+# 深度學習模型
+transformers>=4.30.0
+torch>=2.0.0
+torchvision>=0.15.0
+
+# 可選：LayoutLM支援 (如需完整功能請啟用)
+# layoutlm>=0.1.0
+# layoutlmv2>=0.1.0
+# layoutlmv3>=0.1.0
+
+# Ollama 客戶端（用於 Qwen3-VL）
+# ollama-python>=0.1.7
+
+# 工具套件
+numpy==1.24.3
+pandas==2.0.3
+tqdm==4.66.1
+matplotlib>=3.7.0
+
+# 系統監控
+psutil>=5.9.0
+
+# 資料處理
+jsonlines>=3.1.0
+openpyxl>=3.1.0
+
+# 網頁處理 (選用)
+beautifulsoup4>=4.12.0
+lxml>=4.9.0
+
+# 設定檔處理
+pyyaml>=6.0

@@ -1,0 +1,51 @@
+# ==============================================================================
+# Security .gitignore for po_extractor Python Engine
+# ==============================================================================
+
+# Python cache & virtual environments
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+venv/
+.venv/
+env/
+
+# Business documents & actual customer outputs (真實文件與抽取結果)
+import_doc/
+output_doc/
+results/
+corrected/
+uploads/
+PO/
+finish/
+*.pdf
+*.PDF
+*.rar
+*.zip
+*.json
+!learned_patterns.json
+!learned_accuracy_patterns.json
+!po_extractor/config/*.json
+
+# Logs & internal logs
+*.log
+logs/
+qwen_learning_log.json
+PDF1_content.txt
+PDF2_content.txt
+
+# Photos & personal media
+*.jpg
+*.jpeg
+*.png
+*.bmp
+*.heic
+*.webp
+
+# OS & IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+

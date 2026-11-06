@@ -1,0 +1,180 @@
+# ==============================================================================
+# Strict Enterprise Security .gitignore for OmniExtract-VL / OCR Project
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# 1. Critical Sensitive & Test Data (絕對禁止上傳之業務真實單據與測試資料)
+# ------------------------------------------------------------------------------
+測試資料/
+測試資料/**
+*測試資料*
+analyse/
+analyse/**
+*analyse*
+
+# Raw business documents (真實採購單、報表、PDF、壓縮檔)
+*.pdf
+*.PDF
+*.rar
+*.RAR
+*.zip
+*.ZIP
+*.7z
+*.7Z
+*.tar
+*.gz
+*.xlsx
+*.xls
+*.csv
+*.tsv
+*.doc
+*.docx
+*.ppt
+*.pptx
+
+# Document processing pipelines & storage directories (實際處理與產出資料夾)
+import_doc/
+output_doc/
+results/
+corrected/
+uploads/
+PO/
+finish/
+Sample*/
+
+# ------------------------------------------------------------------------------
+# 2. Photos, Personal Images & Media (個人照片、截圖與隱私影像)
+# ------------------------------------------------------------------------------
+*.jpg
+*.jpeg
+*.png
+*.bmp
+*.heic
+*.webp
+*.gif
+*.tif
+*.tiff
+*.raw
+*.cr2
+*.nef
+*.svgz
+photos/
+pictures/
+camera/
+screenshots/
+images/personal/
+
+# ------------------------------------------------------------------------------
+# 3. Work Logs, Discussion Records & Daily Journals (工作記錄、內部日誌與會議記錄)
+# ------------------------------------------------------------------------------
+docs/
+docs/**
+doc/
+*.log
+logs/
+*.log.*
+*learning_log*.json
+*learned*patterns*.json
+*journal*.json
+*record*.md
+*RECORD*.md
+*DISCUSSION*.md
+*discussion*.md
+*DAILY*.md
+*daily*.md
+PDF1_content.txt
+PDF2_content.txt
+webapp_startup.log
+
+# ------------------------------------------------------------------------------
+# 4. Credentials, Secrets & Private Environment Configurations (密鑰、帳密與連線設定)
+# ------------------------------------------------------------------------------
+# Ignore all .env files EXCEPT .env.example
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.cert
+*.crt
+id_rsa
+id_rsa.pub
+id_ed25519
+id_ed25519.pub
+*.keystore
+*.jks
+credentials.json
+client_secrets.json
+service_account.json
+
+# ------------------------------------------------------------------------------
+# 5. OS & IDE Metadata (作業系統與編輯器暫存檔)
+# ------------------------------------------------------------------------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+*~
+
+# ------------------------------------------------------------------------------
+# 6. Build Artifacts, Dependencies & Caches (相依套件與編譯快取)
+# ------------------------------------------------------------------------------
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store/
+.npm/
+
+# Cache directories
+.cache/
+.pytest_cache/
+.temp/
+.tmp/
+*.bak
+*.backup
+.git.bak
+
+

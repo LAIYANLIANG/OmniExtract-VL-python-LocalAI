@@ -1,0 +1,46 @@
+{
+  "_version": "1.1.0",
+  "_description": "Qwen3-VL-4B-Instruct 模型配置設定 (via Ollama) - 92%閾值觸發",
+  "model": {
+    "name": "Qwen3-VL-4B-Instruct",
+    "format": "GGUF", 
+    "quantization": "Q4_K_M",
+    "ollama_model": "adelnazmy2002/Qwen3-VL-4B-Instruct:Q4_K_M",
+    "file_size_mb": 3300,
+    "expected_sha256": ""
+  },
+  "runtime": {
+    "backend": "ollama",
+    "api_endpoint": "http://localhost:11434/api/generate",
+    "model_id": "adelnazmy2002/Qwen3-VL-4B-Instruct:Q4_K_M",
+    "max_tokens": 2048,
+    "temperature": 0.3,
+    "timeout_seconds": 60
+  },
+  "learning": {
+    "confidence_threshold": 0.92,
+    "trigger_description": "當信心分數低於92%時觸發Qwen裁決",
+    "auto_learning": true,
+    "pattern_generation": true,
+    "manual_correction_weight": 1.5
+  },
+  "prompts": {
+    "audit_template": "我有以下解析結果，它們在「{field_name}」上有差異：\n\n{vote_details}\n\n請你重新觀察原始文件，判斷哪個結果正確，或者給出你認為正確的數值。\n回覆格式（JSON）：\n{{\"field\": \"{field_name}\", \"correct_value\": \"你判斷的正確值\", \"source\": \"採用哪個結果 或 自行判斷\", \"reasoning\": \"判斷理由\", \"confidence\": 0.95}}",
+    "diagnosis_template": "以下是供應商 {vendor_id} 的採購單解析錯誤分析：\n\n差異欄位：\n{diff_details}\n\n請分析以上錯誤可能的原因，並給出改善建議。\n回覆格式（JSON陣列）：\n[{{\"step\": 1, \"action\": \"increase_contrast\", \"value\": 1.2, \"reason\": \"此類發票的統編字體較淡，位於浮水印上方\", \"field_affected\": \"tax_id\", \"priority\": \"high\"}}]",
+    "system_prompt": "你是一個專業的文件分析助手，專門協助改善 PDF 採購單的自動化提取準確率。你具備視覺分析能力，能夠觀察影像細節並提供技術改善建議。"
+  },
+  "thresholds": {
+    "voting_trigger_score": 0.90,
+    "diagnosis_trigger_score": 0.75,
+    "confidence_threshold": 0.85,
+    "max_retries": 3
+  },
+  "_status": {
+    "installed": false,
+    "tested": false,
+    "last_test": "",
+    "total_calls": 0,
+    "success_calls": 0,
+    "avg_response_time_ms": 0
+  }
+}

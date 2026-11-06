@@ -1,0 +1,37 @@
+{
+  "_version": "1.0.0",
+  "_description": "OpenCV 影像處理參數設定，由第七步 Qwen 回饋動態調整",
+  "default": {
+    "denoise_strength": 10,
+    "binary_threshold": 127,
+    "binary_method": "adaptive_gaussian",
+    "contrast_alpha": 1.0,
+    "contrast_beta": 0,
+    "deskew_enabled": true,
+    "sharpen_enabled": false,
+    "sharpen_kernel": [[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]]
+  },
+  "vendor_overrides": {
+    "siemens": {
+      "denoise_strength": 8,
+      "contrast_alpha": 1.1,
+      "binary_threshold": 120
+    },
+    "byd": {
+      "denoise_strength": 12,
+      "binary_threshold": 140,
+      "contrast_alpha": 1.05
+    },
+    "kaifa": {
+      "denoise_strength": 9,
+      "binary_threshold": 130
+    },
+    "desay_sv": {
+      "denoise_strength": 11,
+      "binary_threshold": 135,
+      "sharpen_enabled": true
+    }
+  },
+  "_last_updated": "2026-03-31T00:00:00Z",
+  "_update_count": 0
+}

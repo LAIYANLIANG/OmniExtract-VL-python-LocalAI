@@ -1,0 +1,66 @@
+{
+  "name": "omniextract-platform",
+  "version": "1.0.0",
+  "description": "AI-powered financial document processing system",
+  "private": true,
+  "workspaces": [
+    "src/backend",
+    "src/frontend"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "npm run dev --workspace=src/backend",
+    "dev:frontend": "npm run dev --workspace=src/frontend",
+    "build": "npm run build:backend && npm run build:frontend",
+    "build:backend": "npm run build --workspace=src/backend",
+    "build:frontend": "npm run build --workspace=src/frontend",
+    "start": "npm run start --workspace=src/backend",
+    "test": "npm run test --workspaces",
+    "test:backend": "npm run test --workspace=src/backend",
+    "test:frontend": "npm run test --workspace=src/frontend",
+    "test:e2e": "playwright test",
+    "lint": "npm run lint --workspaces",
+    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,md}\"",
+    "typecheck": "npm run typecheck --workspaces",
+    "docker:build": "docker compose build",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f",
+    "db:migrate": "npm run migrate --workspace=src/backend",
+    "db:seed": "npm run seed --workspace=src/backend",
+    "db:reset": "npm run db:migrate && npm run db:seed",
+    "prepare": "husky install"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.40.0",
+    "@types/node": "^20.10.0",
+    "concurrently": "^8.2.2",
+    "husky": "^8.0.3",
+    "lint-staged": "^15.2.0",
+    "prettier": "^3.1.1",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx}": [
+      "prettier --write",
+      "eslint --fix"
+    ],
+    "*.{json,css,md}": [
+      "prettier --write"
+    ]
+  },
+  "keywords": [
+    "ai",
+    "document-processing",
+    "financial",
+    "excel",
+    "pdf",
+    "ocr"
+  ],
+  "author": "OmniExtract Team",
+  "license": "UNLICENSED"
+}
